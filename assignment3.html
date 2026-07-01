@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JavaScript Logic & State Management — Thiranex</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #0F1B2D;
+      --blue:   #2563EB;
+      --teal:   #06B6D4;
+      --white:  #F8FAFC;
+      --slate:  #64748B;
+      --danger: #EF4444;
+      --card-bg:#111C2E;
+      --border: rgba(255,255,255,0.07);
+      --radius: 18px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--navy);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15,27,45,0.92);
+      backdrop-filter: blur(14px);
+    }
+
+    .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .logo span { color: var(--teal); }
+
+    .nav-right { display: flex; align-items: center; gap: 0.75rem; }
+    .nav-btn {
+      background: none; border: 1px solid var(--border);
+      color: var(--white); border-radius: 10px;
+      padding: 0.45rem 1rem; font-size: 0.85rem;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .nav-btn:hover { border-color: var(--teal); background: rgba(6,182,212,0.08); }
+
+    /* ── MAIN ── */
+    main {
+      flex: 1;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.78rem; color: var(--slate);
+      margin-bottom: 1.75rem;
+    }
+    .breadcrumb a { color: var(--teal); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb span { opacity: 0.4; }
+
+    /* ── PROGRESS RING ── */
+    .ring-wrap {
+      display: flex; justify-content: center;
+      padding: 0.5rem 0 1.5rem;
+    }
+    .ring-container {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      width: 80px; height: 80px;
+    }
+    .ring-svg { width: 80px; height: 80px; transform: rotate(-90deg); }
+    .ring-track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 5; }
+    .ring-fill {
+      fill: none;
+      stroke: url(#ringGrad3);
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+      animation: ring-draw3 1.6s cubic-bezier(0.4,0,0.2,1) 0.3s forwards;
+    }
+    @keyframes ring-draw3 {
+      to { stroke-dashoffset: 110; } /* 50% */
+    }
+    .ring-label {
+      position: absolute;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    /* ── CARD HEADER ── */
+    .card-header {
+      padding: 1.5rem 1.5rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .module-badge { display: flex; align-items: center; gap: 0.6rem; }
+    .module-num {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.1rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .module-meta { display: flex; flex-direction: column; gap: 0.2rem; }
+    .module-label { font-size: 0.72rem; color: var(--slate); text-transform: uppercase; letter-spacing: 0.07em; }
+    .module-course { font-size: 0.85rem; color: var(--white); font-weight: 500; }
+
+    .available-pill {
+      font-size: 0.72rem; font-weight: 600;
+      color: #34D399;
+      background: rgba(52,211,153,0.12);
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 20px;
+      padding: 0.35rem 0.85rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── DUE DATE BAR ── */
+    .due-bar {
+      padding: 0.9rem 1.5rem;
+      background: rgba(239,68,68,0.06);
+      border-bottom: 1px solid rgba(239,68,68,0.15);
+      display: flex; align-items: center; gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .due-date {
+      display: flex; align-items: center; gap: 0.45rem;
+      font-size: 0.85rem; color: var(--slate);
+    }
+    .due-date strong { color: var(--white); }
+
+    .overdue-pill {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.78rem; font-weight: 600;
+      color: var(--danger);
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 20px;
+      padding: 0.35rem 0.85rem;
+      animation: pulse-border 2s ease-in-out infinite;
+    }
+    .overdue-dot {
+      width: 6px; height: 6px;
+      background: var(--danger);
+      border-radius: 50%;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+      50% { box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+    }
+
+    /* ── CARD BODY ── */
+    .card-body { padding: 1.75rem 1.5rem; }
+
+    .assignment-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.35rem, 4vw, 1.75rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.4px;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--white) 60%, var(--teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .assignment-desc {
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: #94A3B8;
+      margin-bottom: 2rem;
+    }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--teal);
+      margin-bottom: 0.9rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, rgba(6,182,212,0.3), transparent);
+    }
+
+    /* ── FEATURES ── */
+    .features { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 2rem; }
+
+    .feature-item {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .feature-item:hover {
+      border-color: rgba(6,182,212,0.3);
+      background: rgba(6,182,212,0.04);
+    }
+
+    .feature-icon {
+      width: 28px; height: 28px; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(6,182,212,0.2));
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem;
+    }
+    .feature-text { font-size: 0.88rem; line-height: 1.5; color: #CBD5E1; padding-top: 0.15rem; }
+    .feature-text strong { color: var(--white); }
+
+    /* ── OUTCOME ── */
+    .outcome-box {
+      background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(6,182,212,0.08));
+      border: 1px solid rgba(6,182,212,0.2);
+      border-radius: 14px;
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .outcome-box p { font-size: 0.9rem; line-height: 1.65; color: #CBD5E1; }
+    .outcome-box p strong { color: var(--white); }
+
+    /* ── LIVE DEMO WIDGET (signature element) ── */
+    .demo-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.78rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: #A78BFA;
+      margin-bottom: 0.9rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .demo-label::after {
+      content: '';
+      flex: 1; height: 1px;
+      background: linear-gradient(to right, rgba(167,139,250,0.3), transparent);
+    }
+
+    .todo-widget {
+      background: rgba(167,139,250,0.05);
+      border: 1px solid rgba(167,139,250,0.18);
+      border-radius: 14px;
+      padding: 1.1rem 1.1rem 1rem;
+      margin-bottom: 2rem;
+    }
+    .todo-widget-title {
+      font-size: 0.78rem; color: #A78BFA; font-weight: 600;
+      margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;
+    }
+    .live-dot {
+      width: 6px; height: 6px; background: #A78BFA;
+      border-radius: 50%; animation: blink 1.5s ease-in-out infinite;
+    }
+
+    .todo-input-row {
+      display: flex; gap: 0.5rem; margin-bottom: 0.75rem;
+    }
+    .todo-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 9px;
+      padding: 0.55rem 0.85rem;
+      color: var(--white);
+      font-size: 0.84rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .todo-input::placeholder { color: var(--slate); }
+    .todo-input:focus { border-color: #A78BFA; }
+
+    .todo-add-btn {
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border: none; border-radius: 9px;
+      color: #fff; font-size: 0.84rem; font-weight: 600;
+      padding: 0.55rem 1rem; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: opacity 0.2s;
+    }
+    .todo-add-btn:hover { opacity: 0.85; }
+
+    .todo-filters {
+      display: flex; gap: 0.4rem; margin-bottom: 0.75rem;
+    }
+    .filter-btn {
+      font-size: 0.75rem; padding: 0.3rem 0.7rem;
+      border-radius: 20px; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      border: 1px solid rgba(167,139,250,0.2);
+      background: none; color: var(--slate);
+      transition: all 0.15s;
+    }
+    .filter-btn.active {
+      background: rgba(167,139,250,0.15);
+      color: #A78BFA;
+      border-color: rgba(167,139,250,0.4);
+    }
+
+    .todo-list { display: flex; flex-direction: column; gap: 0.4rem; min-height: 40px; }
+
+    .todo-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 9px;
+      padding: 0.55rem 0.75rem;
+      animation: slide-in 0.2s ease;
+    }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .todo-check {
+      width: 16px; height: 16px; border-radius: 4px;
+      border: 1.5px solid rgba(167,139,250,0.4);
+      background: none; cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .todo-check.done {
+      background: #7C3AED; border-color: #7C3AED;
+    }
+    .todo-check.done::after { content: '✓'; color: #fff; font-size: 0.65rem; }
+
+    .todo-text {
+      flex: 1; font-size: 0.83rem; color: #CBD5E1;
+      transition: all 0.15s;
+    }
+    .todo-text.done { text-decoration: line-through; color: var(--slate); }
+
+    .todo-del {
+      background: none; border: none; color: var(--slate);
+      cursor: pointer; font-size: 0.75rem; padding: 0.1rem 0.25rem;
+      border-radius: 4px; transition: color 0.15s;
+    }
+    .todo-del:hover { color: var(--danger); }
+
+    .todo-empty {
+      text-align: center; font-size: 0.8rem; color: var(--slate);
+      padding: 0.75rem 0; display: none;
+    }
+
+    /* ── DIVIDER ── */
+    .divider { height: 1px; background: var(--border); margin: 0 -1.5rem 1.75rem; }
+
+    /* ── CTA ── */
+    .cta-area { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+
+    .btn-primary {
+      flex: 1; min-width: 200px;
+      background: linear-gradient(135deg, var(--blue), #1D4ED8);
+      color: #fff; border: none; border-radius: 14px;
+      padding: 1rem 1.5rem;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(37,99,235,0.35);
+    }
+    .btn-primary::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(37,99,235,0.5); }
+    .btn-primary:hover::before { opacity: 1; }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.05); color: var(--slate);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 1rem 1.25rem;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.2); color: var(--white); background: rgba(255,255,255,0.08); }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center; padding: 1.25rem;
+      font-size: 0.75rem; color: var(--slate);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--teal); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 480px) {
+      nav { padding: 0.85rem 1rem; }
+      main { padding: 1.5rem 1rem 3rem; }
+      .card-header { padding: 1.25rem 1.25rem 1rem; }
+      .card-body { padding: 1.5rem 1.25rem; }
+      .due-bar { padding: 0.75rem 1.25rem; }
+      .divider { margin: 0 -1.25rem 1.5rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .overdue-dot, .overdue-pill, .ring-fill, .live-dot { animation: none; }
+      .ring-fill { stroke-dashoffset: 110; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <div class="logo-icon">T</div>
+    Thira<span>nex</span>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn">Dashboard</button>
+    <button class="nav-btn">⊕</button>
+  </div>
+</nav>
+
+<main>
+
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="#">My Courses</a>
+    <span>›</span>
+    <a href="#">Web Development</a>
+    <span>›</span>
+    Assignment 3
+  </nav>
+
+  <!-- PROGRESS RING -->
+  <div class="ring-wrap">
+    <div class="ring-container">
+      <svg class="ring-svg" viewBox="0 0 80 80" aria-hidden="true">
+        <defs>
+          <linearGradient id="ringGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7C3AED"/>
+            <stop offset="100%" stop-color="#06B6D4"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-track" cx="40" cy="40" r="35"/>
+        <circle class="ring-fill" cx="40" cy="40" r="35"/>
+      </svg>
+      <span class="ring-label" aria-label="50% course progress">50%</span>
+    </div>
+  </div>
+
+  <!-- CARD -->
+  <div class="card" role="article">
+
+    <div class="card-header">
+      <div class="module-badge">
+        <div class="module-num" aria-label="Assignment 3">3</div>
+        <div class="module-meta">
+          <span class="module-label">Module</span>
+          <span class="module-course">Web Development Track</span>
+        </div>
+      </div>
+      <span class="available-pill" role="status">● Available</span>
+    </div>
+
+    <div class="due-bar">
+      <div class="due-date">
+        <span aria-hidden="true">📅</span>
+        Due date: <strong>22 May 2026</strong>
+      </div>
+      <div class="overdue-pill" role="alert" aria-live="polite">
+        <span class="overdue-dot" aria-hidden="true"></span>
+        Overdue by 24 days
+      </div>
+    </div>
+
+    <div class="card-body">
+      <h1 class="assignment-title">JavaScript Logic &amp; State Management</h1>
+
+      <p class="assignment-desc">
+        Develop an interactive, client-side To-Do List application to master DOM manipulation, event handling, and local data persistence.
+      </p>
+
+      <!-- KEY FEATURES -->
+      <div class="section-label">Key Features</div>
+      <ul class="features" role="list">
+        <li class="feature-item">
+          <span class="feature-icon" aria-hidden="true">⚙️</span>
+          <span class="feature-text">Implement full <strong>CRUD</strong> (Create, Read, Update, Delete) functionality</span>
+        </li>
+        <li class="feature-item">
+          <span class="feature-icon" aria-hidden="true">💾</span>
+          <span class="feature-text">Persist data automatically using <strong>window.localStorage</strong></span>
+        </li>
+        <li class="feature-item">
+          <span class="feature-icon" aria-hidden="true">🔍</span>
+          <span class="feature-text">Build <strong>advanced filtering</strong> (All, Active, Completed)</span>
+        </li>
+        <li class="feature-item">
+          <span class="feature-icon" aria-hidden="true">🔗</span>
+          <span class="feature-text">Create dynamic DOM elements and attach <strong>delegated event listeners</strong></span>
+        </li>
+      </ul>
+
+      <!-- EXPECTED OUTCOME -->
+      <div class="section-label">Expected Outcome</div>
+      <div class="outcome-box">
+        <p>A <strong>fully functional, state-driven task management application</strong> that retains user data across browser reloads.</p>
+      </div>
+
+      <!-- LIVE DEMO WIDGET -->
+      <div class="demo-label">Try It Live</div>
+      <div class="todo-widget" aria-label="Interactive To-Do demo">
+        <div class="todo-widget-title">
+          <span class="live-dot" aria-hidden="true"></span>
+          Interactive Preview — CRUD + Filter Demo
+        </div>
+        <div class="todo-input-row">
+          <input class="todo-input" id="todoInput" type="text" placeholder="Add a new task…" maxlength="80" aria-label="New task" />
+          <button class="todo-add-btn" onclick="addTodo()">Add</button>
+        </div>
+        <div class="todo-filters" role="group" aria-label="Filter tasks">
+          <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+          <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
+          <button class="filter-btn" onclick="setFilter('done',this)">Completed</button>
+        </div>
+        <div class="todo-list" id="todoList" role="list"></div>
+        <div class="todo-empty" id="todoEmpty">No tasks here yet.</div>
+      </div>
+
+      <div class="divider" aria-hidden="true"></div>
+
+      <div class="cta-area">
+        <button class="btn-primary" onclick="this.textContent='Uploading…'; setTimeout(()=>this.textContent='Work Submitted ✓',1400)">
+          Submit Work
+        </button>
+        <button class="btn-secondary">Save Draft</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  System developed and maintained by Team Emogi (<a href="https://emogi.in" target="_blank" rel="noopener">emogi.in</a>)
+</footer>
+
+<script>
+  let todos = [
+    { id: 1, text: 'Set up project structure', done: true },
+    { id: 2, text: 'Implement add task feature', done: false },
+    { id: 3, text: 'Build filter logic', done: false },
+  ];
+  let filter = 'all';
+  let nextId = 4;
+
+  function render() {
+    const list = document.getElementById('todoList');
+    const empty = document.getElementById('todoEmpty');
+    const visible = todos.filter(t =>
+      filter === 'all' ? true : filter === 'done' ? t.done : !t.done
+    );
+    list.innerHTML = '';
+    if (visible.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      visible.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'todo-item';
+        item.setAttribute('role', 'listitem');
+        item.innerHTML = `
+          <button class="todo-check ${t.done ? 'done' : ''}" onclick="toggle(${t.id})" aria-label="${t.done ? 'Mark incomplete' : 'Mark complete'}"></button>
+          <span class="todo-text ${t.done ? 'done' : ''}">${escHtml(t.text)}</span>
+          <button class="todo-del" onclick="del(${t.id})" aria-label="Delete task">✕</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function addTodo() {
+    const inp = document.getElementById('todoInput');
+    const val = inp.value.trim();
+    if (!val) return;
+    todos.unshift({ id: nextId++, text: val, done: false });
+    inp.value = '';
+    render();
+  }
+
+  function toggle(id) {
+    todos = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
+    render();
+  }
+
+  function del(id) {
+    todos = todos.filter(t => t.id !== id);
+    render();
+  }
+
+  function setFilter(f, btn) {
+    filter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
+
+  document.getElementById('todoInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTodo();
+  });
+
+  render();
+</script>
+
+</body>
+</html>
